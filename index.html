@@ -28,7 +28,7 @@
 <body>
 <header>
   <h1>✦ ドットキャラ 3Dビューア ✦</h1>
-  <p>ボクセル試作1体目（歩行アニメ付き・約0.19MB）</p>
+  <p>ボクセル試作1体目（歩行アニメ付き・約0.28MB）</p>
 </header>
 <div id="stage"><model-viewer id="mv" alt="ドットキャラ" camera-controls auto-rotate autoplay animation-name="Walk" shadow-intensity="0.6"></model-viewer></div>
 <footer>
@@ -38,7 +38,7 @@
 <p class="hint">指でドラッグで回せます／ピンチで拡大・縮小</p>
 <script>
 (async () => {
-  const parts = await Promise.all(["part1.txt","part2.txt","part3.txt"].map(p => fetch(p).then(r => r.text())));
+  const parts = await Promise.all(["part1.txt","part2.txt","part3.txt","part4.txt"].map(p => fetch(p).then(r => r.text())));
   const b64 = parts.join("").replace(/\s+/g,"");
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
