@@ -13,8 +13,15 @@
   header { padding:14px 16px 4px; text-align:center; }
   header h1 { font-size:21px; letter-spacing:.04em; color:#a03a4e; }
   header p { font-size:13px; color:#a07a83; margin-top:2px; }
+  .tabs { display:flex; gap:6px; justify-content:center; padding:8px 10px 2px; flex-wrap:wrap; }
+  .tabs button { font-family:inherit; font-size:14px; font-weight:700;
+    padding:8px 13px; border-radius:999px; border:2px solid #a03a4e;
+    background:#fff; color:#a03a4e; cursor:pointer; }
+  .tabs button.on { background:#a03a4e; color:#fff; }
   #stage { flex:1; position:relative; }
   model-viewer { width:100%; height:100%; --poster-color:transparent; }
+  #loading { position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    font-size:15px; color:#a03a4e; pointer-events:none; }
   footer { padding:10px 14px calc(14px + env(safe-area-inset-bottom));
     display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   footer button { font-family:inherit; font-size:16px; font-weight:700;
@@ -28,28 +35,57 @@
 <body>
 <header>
   <h1>✦ ドットキャラ 3Dビューア ✦</h1>
-  <p>ボクセル試作1体目（歩行アニメ付き・約0.28MB）</p>
+  <p id="subtitle">和風（歩行アニメ付き・約0.28MB）</p>
 </header>
-<div id="stage"><model-viewer id="mv" alt="ドットキャラ" camera-controls auto-rotate autoplay animation-name="Walk" shadow-intensity="0.6"></model-viewer></div>
+<div class="tabs">
+  <button data-char="1" class="on">和風</button>
+  <button data-char="2">アイドル</button>
+  <button data-char="3">ゴスロリ</button>
+  <button data-char="4">おでかけ</button>
+</div>
+<div id="stage">
+  <model-viewer id="mv" alt="ドットキャラ" camera-controls auto-rotate autoplay animation-name="Walk" shadow-intensity="0.6"></model-viewer>
+  <div id="loading">読み込み中…</div>
+</div>
 <footer>
   <button id="btnWalk" class="on">歩くのを止める</button>
   <button id="btnRot" class="on">自動で回す：ON</button>
 </footer>
 <p class="hint">指でドラッグで回せます／ピンチで拡大・縮小</p>
 <script>
-(async () => {
-  const parts = await Promise.all(["part1.txt","part2.txt","part3.txt","part4.txt"].map(p => fetch(p).then(r => r.text())));
-  const b64 = parts.join("").replace(/\s+/g,"");
-  const bin = atob(b64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-  const url = URL.createObjectURL(new Blob([bytes], {type:"model/gltf-binary"}));
+  const CHARS = {
+    "1": { label: "和風（歩行アニメ付き・約0.28MB）", parts: ["part1.txt","part2.txt","part3.txt","part4.txt"] },
+    "2": { label: "アイドル（歩行アニメ付き・約0.29MB）", parts: ["c2p1.txt","c2p2.txt","c2p3.txt","c2p4.txt"] },
+    "3": { label: "ゴスロリ（歩行アニメ付き・約0.31MB）", parts: ["c3p1.txt","c3p2.txt","c3p3.txt","c3p4.txt","c3p5.txt"] },
+    "4": { label: "おでかけ（歩行アニメ付き・約0.22MB）", parts: ["c4p1.txt","c4p2.txt","c4p3.txt"] }
+  };
   const mv = document.getElementById("mv");
-  mv.src = url;
+  const subtitle = document.getElementById("subtitle");
+  const loading = document.getElementById("loading");
+  const cache = {};
+  async function loadChar(id) {
+    document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.char === id));
+    subtitle.textContent = CHARS[id].label;
+    if (!cache[id]) {
+      loading.style.display = "flex";
+      const texts = await Promise.all(CHARS[id].parts.map(p => fetch(p).then(r => r.text())));
+      const b64 = texts.join("").replace(/\s+/g, "");
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      cache[id] = URL.createObjectURL(new Blob([bytes], { type: "model/gltf-binary" }));
+      loading.style.display = "none";
+    }
+    mv.src = cache[id];
+    mv.play();
+    const bw = document.getElementById("btnWalk");
+    bw.textContent = "歩くのを止める"; bw.classList.add("on");
+  }
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => loadChar(b.dataset.char));
   const bw = document.getElementById("btnWalk");
   bw.onclick = () => {
-    if (mv.paused) { mv.play(); bw.textContent="歩くのを止める"; bw.classList.add("on"); }
-    else { mv.pause(); bw.textContent="歩かせる"; bw.classList.remove("on"); }
+    if (mv.paused) { mv.play(); bw.textContent = "歩くのを止める"; bw.classList.add("on"); }
+    else { mv.pause(); bw.textContent = "歩かせる"; bw.classList.remove("on"); }
   };
   const br = document.getElementById("btnRot");
   br.onclick = () => {
@@ -57,7 +93,7 @@
     br.textContent = "自動で回す：" + (mv.autoRotate ? "ON" : "OFF");
     br.classList.toggle("on", mv.autoRotate);
   };
-})();
+  loadChar("1");
 </script>
 </body>
 </html>
