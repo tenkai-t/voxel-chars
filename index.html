@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ドットキャラ3Dビューア</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body { font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+    background:linear-gradient(180deg,#fdf6ec 0%,#fdeef0 70%,#f9e2e6 100%);
+    color:#5a3a42; display:flex; flex-direction:column; overflow:hidden; }
+  header { padding:14px 16px 4px; text-align:center; }
+  header h1 { font-size:21px; letter-spacing:.04em; color:#a03a4e; }
+  header p { font-size:13px; color:#a07a83; margin-top:2px; }
+  #stage { flex:1; position:relative; }
+  model-viewer { width:100%; height:100%; --poster-color:transparent; }
+  footer { padding:10px 14px calc(14px + env(safe-area-inset-bottom));
+    display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  footer button { font-family:inherit; font-size:16px; font-weight:700;
+    padding:12px 20px; border-radius:999px; border:2px solid #a03a4e;
+    background:#fff; color:#a03a4e; cursor:pointer; box-shadow:0 2px 6px rgba(160,58,78,.18); }
+  footer button.on { background:#a03a4e; color:#fff; }
+  .hint { text-align:center; font-size:12px; color:#bb939c; padding-bottom:8px; }
+</style>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>✦ ドットキャラ 3Dビューア ✦</h1>
+  <p>ボクセル試作1体目（歩行アニメ付き・約0.19MB）</p>
+</header>
+<div id="stage"><model-viewer id="mv" alt="ドットキャラ" camera-controls auto-rotate autoplay animation-name="Walk" shadow-intensity="0.6"></model-viewer></div>
+<footer>
+  <button id="btnWalk" class="on">歩くのを止める</button>
+  <button id="btnRot" class="on">自動で回す：ON</button>
+</footer>
+<p class="hint">指でドラッグで回せます／ピンチで拡大・縮小</p>
+<script>
+(async () => {
+  const parts = await Promise.all(["part1.txt","part2.txt","part3.txt"].map(p => fetch(p).then(r => r.text())));
+  const b64 = parts.join("").replace(/\s+/g,"");
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([bytes], {type:"model/gltf-binary"}));
+  const mv = document.getElementById("mv");
+  mv.src = url;
+  const bw = document.getElementById("btnWalk");
+  bw.onclick = () => {
+    if (mv.paused) { mv.play(); bw.textContent="歩くのを止める"; bw.classList.add("on"); }
+    else { mv.pause(); bw.textContent="歩かせる"; bw.classList.remove("on"); }
+  };
+  const br = document.getElementById("btnRot");
+  br.onclick = () => {
+    mv.autoRotate = !mv.autoRotate;
+    br.textContent = "自動で回す：" + (mv.autoRotate ? "ON" : "OFF");
+    br.classList.toggle("on", mv.autoRotate);
+  };
+})();
+</script>
+</body>
+</html>
